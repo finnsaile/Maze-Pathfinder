@@ -5,6 +5,13 @@
 #include <utility>
 #include <queue>
 
+#define BITMAP_ENABLE
+#define PRINT_ENABLE_
+
+#ifdef BITMAP_ENABLE
+#include "bitmap_image.hpp"
+#endif
+
 using namespace std;
 
 typedef pair<int64_t, int64_t> iPair;
@@ -46,6 +53,44 @@ void print_grid(const vector<vector<Node>>& grid)
         }
         cout << '\n';
     }
+}
+
+void print_bitmap(const vector<vector<Node>>& grid)
+{
+    int64_t height = grid.size();
+    int64_t width = grid.front().size();
+
+    bitmap_image maze(width, height);
+    bitmap_image maze_solution(width, height);
+    maze.clear();
+
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            if(grid[i][j].marked)
+            {
+                //cout << YELLOW << node.value << RESET;
+                maze_solution.set_pixel(j, i, 255, 0, 0);
+                maze.set_pixel(j, i, 255, 255, 255);
+            }
+            else if(grid[i][j].value == 0)
+            {
+                //cout << node.value;
+                maze_solution.set_pixel(j, i, 0, 0, 0);
+                maze.set_pixel(j, i, 0, 0, 0);
+            }
+            else
+            {
+                maze_solution.set_pixel(j, i, 255, 255, 255);
+                maze.set_pixel(j, i, 255, 255, 255);
+            }
+        }
+    }
+    maze.set_pixel(1, 1, 255, 0, 0);
+    maze.set_pixel(width - 2, height - 2, 255, 0, 0);
+    maze.save_image("maze.bmp");
+    maze_solution.save_image("maze_solution.bmp");
 }
 
 /**
@@ -157,6 +202,14 @@ int main(int argc, char* argv[])
     }
 
     dijkstra(grid);
+
+    #ifdef PRINT_ENABLE
     print_grid(grid);
+    #endif
+
+    #ifdef BITMAP_ENABLE
+    print_bitmap(grid);
+    #endif
+
     return 0;
 }
