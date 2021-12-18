@@ -55,10 +55,17 @@ void print_grid(const vector<vector<Node>>& grid)
     }
 }
 
-void print_bitmap(const vector<vector<Node>>& grid)
+void print_bitmap(const vector<vector<Node>>& grid, const iPair start = {1, 1}, iPair end = {-1, -1})
 {
     int64_t height = grid.size();
     int64_t width = grid.front().size();
+
+    //default end
+    if(end == iPair(-1 , -1))
+        end = iPair(height - 2, width - 2);
+
+    auto [y_s, x_s] = start;
+    auto [y_e, x_e] = end;
 
     bitmap_image maze(width, height);
     bitmap_image maze_solution(width, height);
@@ -87,8 +94,10 @@ void print_bitmap(const vector<vector<Node>>& grid)
             }
         }
     }
-    maze.set_pixel(1, 1, 255, 0, 0);
-    maze.set_pixel(width - 2, height - 2, 255, 0, 0);
+    maze_solution.set_pixel(x_s, y_s, 0, 255, 0);
+    maze_solution.set_pixel(x_e, y_e, 0, 255, 0);
+    maze.set_pixel(x_s, y_s, 0, 255, 0);
+    maze.set_pixel(x_e, y_e, 0, 255, 0);
     maze.save_image("maze.bmp");
     maze_solution.save_image("maze_solution.bmp");
 }
@@ -102,7 +111,7 @@ void print_bitmap(const vector<vector<Node>>& grid)
  * @param end end point of algorithm. Defaults to y = height - 1 and x = width - 2, as the maze generator inserts end at said location
  * @return int64_t length of shortest path from start to end
  */
-int64_t dijkstra(vector<vector<Node>>& grid, const iPair start = {1, 1}, iPair end = {-1, -1})
+int64_t dijkstra(vector<vector<Node>>& grid, const iPair start = {1, 1}, iPair end = {-1, -1}, bool create_bitmap = false)
 {   
     //get size of grid
     const int64_t height = grid.size(), width = grid.front().size();
@@ -117,9 +126,11 @@ int64_t dijkstra(vector<vector<Node>>& grid, const iPair start = {1, 1}, iPair e
 
     //throw exception if start or end are not in range
     if(y_s < 0 || y_s >= height || x_s < 0 || x_s >= width)
-        throw out_of_range("Start Point not on grid");
+        throw out_of_range("Start Point not on grid.");
     if(y_e < 0 || y_e >= height || x_e < 0 || x_e >= width)
-        throw out_of_range("End Point not on grid");
+        throw out_of_range("End Point not on grid.");
+    if(grid[y_s][x_s].value == 0 || grid[y_e][x_e].value == 0)
+        throw out_of_range("Start or End point is not on a valid tile.");
 
     //priority queue (min-heap)
     priority_queue<Node, vector<Node>, Comparator> to_visit;
@@ -174,6 +185,11 @@ int64_t dijkstra(vector<vector<Node>>& grid, const iPair start = {1, 1}, iPair e
         iter = &grid[y][x];
     }
         
+    #ifdef BITMAP_ENABLE
+    if(create_bitmap)
+        print_bitmap(grid, start, end);
+    #endif
+
     //return stored in end node
     return grid[y_e][x_e].cost;
 }
@@ -200,15 +216,13 @@ int main(int argc, char* argv[])
             grid.back().push_back(Node(0, in[j] - '0', iPair(i, j)));
         }
     }
+    height = grid.size();
+    width = grid.front().size();
 
-    dijkstra(grid);
+    dijkstra(grid, iPair((height - 2) / 2, width - 2), iPair((height - 2) / 2, 1), true);
 
     #ifdef PRINT_ENABLE
     print_grid(grid);
-    #endif
-
-    #ifdef BITMAP_ENABLE
-    print_bitmap(grid);
     #endif
 
     return 0;
